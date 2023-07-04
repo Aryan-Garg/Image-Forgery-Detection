@@ -18,8 +18,9 @@ TEST_DIR = './datasets/data/test/'
 ### ARGUMENTS ###
 def get_args():
     args = argparse.ArgumentParser(description='Image Forgery Detection Dataset EDA')
-    args.add_argument('--dims', action='store_true', help='Create a scatter plot of image dimensions')
-
+    args.add_argument('--dims', '-d', action='store_true', help='Create a scatter plot of image dimensions')
+    
+    args.print_help()
     return args.parse_args()
 
 ### EDA ###
@@ -54,10 +55,13 @@ def create_dimensions_scatter(filelist):
 
 
 if __name__ == '__main__':
+    print("---------------------------------------------------------")
     args = get_args()
-
+    print("---------------------------------------------------------")
+    
     test_authentic_path = TEST_DIR + "authentic/"
     test_authentic = [test_authentic_path + f for f in os.listdir(test_authentic_path)]
+    
     if args.dims:
         print(f"[+] Creating image dimensions scatter plot for test/authentic ({len(test_authentic)}) images.")
         create_dimensions_scatter(test_authentic)
