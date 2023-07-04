@@ -18,6 +18,19 @@ Overall, classify images into 3 categories: authentic (0), copy-moved (1) or sli
 
 > Traditional machine learning and then deep learning based approaches are used in this repo.
 
+
+---
+
+### Naive First Thoughts:
+
+1. Statistics of *patches* (but how big?) in spliced images could differentiate the spliced patches from the natural colors of the image.  
+
+2. An object detector for copy-moved images. But what if parts of the object or things like the sky are copy and moved?
+
+3. Traditional block-matching algorithm could give decent results for copy move but not spliced ones.
+
+4. Just throw a CNN at the problem.
+
 ---    
 
 ### Dataset:   
@@ -89,6 +102,10 @@ Your directory structure should look like this:
 ---
 
 ### Approach 2:
+
+---
+
+### Metrics:
 
 ---
 
