@@ -128,6 +128,14 @@ Your directory structure should look like this:
 
 ### Approach 1: Transfer Learning (Classification Setting) (VGG (16 & 19), ResNet (50 & 101), EfficientNet (b4 & b7)) --> Fine-tuning
 
+Usage:
+
+```
+./transfer_learning.py --model <your_model_name> --device <cpu/cuda/cuda:x>
+```
+
+where x is the GPU ID on your machine and model should be among [vgg16, vgg19, resnet50, resnet101, effb4, effb6]
+
 ---
 
 ### Approach 2: Transfer Learning (Segmentation Setting) (U-Net with encoders: ResNet (26B, )) ---> Fine-tuning
