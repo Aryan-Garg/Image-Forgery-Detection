@@ -27,11 +27,12 @@ Overall, classify images into 3 categories: authentic (0), copy-moved (1) or sli
 
 [SpoofSense Dataset](https://drive.google.com/file/d/1lUFc9Gx9pK9PlW0MDtoOwolgbHig4W3m/view?pli=1)
 
-To run **everything**, create a `datasets` directory and then unzip the dataset from the link above in it. 
+To run **everything**, create a `datasets` directory and then unzip the dataset from the link above inside this dir.
+
 
 Your directory structure should look like this:   
 
-'''
+```
 .
 └── datasets
     └── data
@@ -51,8 +52,7 @@ Your directory structure should look like this:
             └── spliced
                 ├── images
                 └── masks
-
-'''
+```
 
 ---    
 
