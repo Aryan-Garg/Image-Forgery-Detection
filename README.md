@@ -126,11 +126,11 @@ Your directory structure should look like this:
 
 ## Methods:
 
-### Approach 1: Transfer Learning (Classification Setting) (VGG16, ResNet50, EfficientNet26) --> Fine-tuning
+### Approach 1: Transfer Learning (Classification Setting) (VGG (16 & 19), ResNet (50 & 101), EfficientNet (b4 & b7)) --> Fine-tuning
 
 ---
 
-### Approach 2: Transfer Learning (Segmentation Setting) (U-Net with encoders: ResNet26B) ---> Fine-tuning
+### Approach 2: Transfer Learning (Segmentation Setting) (U-Net with encoders: ResNet (26B, )) ---> Fine-tuning
 
 ---
 
