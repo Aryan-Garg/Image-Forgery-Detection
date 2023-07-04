@@ -1,0 +1,6 @@
+datasets/**
+*.pdf
+*.tiff
+*.tif
+*.png
+*.jpg
