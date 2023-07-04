@@ -19,13 +19,40 @@ Vision Systems can be fooled with various input side attacks like using physical
 
 Overall, classify images into 3 categories: authentic (0), copy-moved (1) or sliced (2). 
 
-> Traditional machine learning and then deep learning based approaches are used in this repo to tackle the problem.
+> Traditional machine learning and then deep learning based approaches are used in this repo.
 
 ---    
 
 ### Dataset:   
 
 [SpoofSense Dataset](https://drive.google.com/file/d/1lUFc9Gx9pK9PlW0MDtoOwolgbHig4W3m/view?pli=1)
+
+To run **everything**, create a `datasets` directory and then unzip the dataset from the link above in it. 
+
+Your directory structure should look like this:   
+
+'''
+.
+└── datasets
+    └── data
+        ├── test
+        │   ├── authentic
+        │   ├── copy-moved
+        │   │   ├── images
+        │   │   └── masks
+        │   └── spliced
+        │       ├── images
+        │       └── masks
+        └── traindev
+            ├── authentic
+            ├── copy-moved
+            │   ├── images
+            │   └── masks
+            └── spliced
+                ├── images
+                └── masks
+
+'''
 
 ---    
 
