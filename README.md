@@ -1,6 +1,6 @@
 # Image Forgery Detection     
 
----   
+![Authentic Image](photo-grid.png "Dataset 3 classes")
 
 ### Problem Statement:    
 
@@ -57,7 +57,8 @@ Your directory structure should look like this:
 
 #### Size:
 
-Total dataset size: `4980` images
+*Total dataset size*: `4980` images.
+
 
 | traindev   | 4482 |
 |------------|------|
@@ -75,6 +76,10 @@ Total dataset size: `4980` images
 
 > *Observation:* Dataset is **balanced** OR **no class imbalance**
 
+#### Dynamic Range: *Low* `uint8`    
+
+
+#### Resolution: `384` x `256`     
 
 ---
 
