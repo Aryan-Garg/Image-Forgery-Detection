@@ -66,7 +66,7 @@ Your directory structure should look like this:
 
 ---    
 
-### Dataset Statistics:
+### Basic Dataset Statistics:
 
 #### Size:
 
@@ -89,10 +89,36 @@ Your directory structure should look like this:
 
 > *Observation:* Dataset is **balanced** OR **no class imbalance**
 
-#### Dynamic Range: *Low* `uint8`    
 
+**Dynamic Range:** *Low* (`uint8`)    
 
-#### Resolution: `384` x `256`     
+**Resolution:** 
+
+![Resolution Scatter Plot](./eda_results/eda_dim_img.png "Image Resolutions in Dataset")
+
+```
+    height  width  count
+     256    384    104
+     312    633      1
+     316    550      1
+     328    532      1
+     343    566      1
+     384    256     42
+     402    419      1
+     402    600      2
+     426    600      1
+     480    480      1
+     480    640      2
+     500    375      2
+     503    800      1
+     517    800      1
+     522    800      1
+     600    800      2
+     641    430      1
+     773    565      1
+```
+
+> Resolutions are not all same (*wild dataset collection/assortment*) $->$ Will have to `resize`.
 
 ---
 
