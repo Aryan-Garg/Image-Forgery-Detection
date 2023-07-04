@@ -1,8 +1,5 @@
 # Image Forgery Detection     
 
-> Aryan Garg     
-
-
 ---   
 
 ### Problem Statement:    
@@ -74,6 +71,9 @@ Total dataset size: `4980` images
 | authentic  | 166 |
 | copy-moved | 166 |
 | spliced    | 166 |
+
+
+> *Observation:* Dataset is **balanced** OR **no class imbalance**
 
 
 ---
