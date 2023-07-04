@@ -90,6 +90,7 @@ Your directory structure should look like this:
 
 > *Observation:* Dataset is **balanced** OR **no class imbalance**
 
+**Storage Formats:** *tif*, *png* and *jpg*
 
 **Dynamic Range:** *Low* (`uint8`)    
 
@@ -125,11 +126,11 @@ Your directory structure should look like this:
 
 ## Methods:
 
-### Approach 1: Transfer Learning (VGG16, ResNet50, EfficientNet26) --> Fine-tuning
+### Approach 1: Transfer Learning (Classification Setting) (VGG16, ResNet50, EfficientNet26) --> Fine-tuning
 
 ---
 
-### Approach 2:
+### Approach 2: Transfer Learning (Segmentation Setting) (U-Net with encoders: ResNet26B) ---> Fine-tuning
 
 ---
 
