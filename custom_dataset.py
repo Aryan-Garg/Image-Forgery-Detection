@@ -37,8 +37,8 @@ class Spoof_Dataset(Dataset):
 
         self.authentic_dir = os.path.join(self.base_dir, self.mode, 'authentic')
 
-        self.copy_moved_imgs_dir = os.path.join(self.base_dir, self.mode, 'copy_moved', 'images')
-        self.copy_moved_masks_dir = os.path.join(self.base_dir, self.mode, 'copy_moved', 'masks')
+        self.copy_moved_imgs_dir = os.path.join(self.base_dir, self.mode, 'copy-moved', 'images')
+        self.copy_moved_masks_dir = os.path.join(self.base_dir, self.mode, 'copy-moved', 'masks')
 
         self.spliced_imgs_dir = os.path.join(self.base_dir, self.mode, 'spliced', 'images')
         self.spliced_imgs_dir = os.path.join(self.base_dir, self.mode, 'spliced', 'masks')
