@@ -4,7 +4,8 @@
 
 ### Problem Statement:    
 
-Vision Systems can be fooled with various input side attacks like using physical printed(2D/3D) photos of another person for facial security recognition models. Some other systems use liveliness of the person (blinking, twitching etc.) so people use cut-out masks to counter that. The task is to detect authentic images from manipulated ones. Manipulations could include noise perturbations, slices, merging, composites, copied segments, in-paintings, out-paintings ( GANs ;) ) and other processing techniques available at any open-source image editing software like GIMP.
+Vision Systems can be fooled with various input side attacks like using algorithms like content-aware fill and PatchMatch, Content-Aware Healing, Clone-Stamp, Inpainting, Alpha-matting, seam carving etc. OR simple physical printed(2D/3D) photos of another person for facial security recognition models. The task is to *detect authentic images from algorithmically manipulated* ones. 
+
 
 **TL;DR**
 
@@ -66,11 +67,11 @@ Your directory structure should look like this:
 
 ---    
 
-### Basic Dataset Statistics:
+### EDA:
 
 #### Size:
 
-*Total dataset size*: `4980` images.
+*Total dataset size*: `4980` images. *Is small ==> Will need to eventually augment.*
 
 
 | traindev   | 4482 |
@@ -122,8 +123,9 @@ Your directory structure should look like this:
 
 ---
 
+## Methods:
 
-### Approach 1:
+### Approach 1: Transfer Learning (VGG16, ResNet50, EfficientNet26) --> Fine-tuning
 
 ---
 
@@ -136,6 +138,12 @@ Your directory structure should look like this:
 ---
 
 ### References:
+
+1. [Practitioner's Guide to timm](https://towardsdatascience.com/getting-started-with-pytorch-image-models-timm-a-practitioners-guide-4e77b4bf9055)
+
+2. [Forgery Detection Papers Replicated Repo - Umar](https://github.com/umar07/Image_Forgery_Detection/tree/main)
+
+3. [Medium - Image Forgery Detection](https://medium.com/@vvsnikhil/image-forgery-detection-d27d7a3a61d)
 
 ---    
 
