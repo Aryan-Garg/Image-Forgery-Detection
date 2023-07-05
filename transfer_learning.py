@@ -97,9 +97,14 @@ def check_args(args):
     args.device = set_device(args.device)
     
 
-def test_step(model, test_loader, device, epoch, saveCKPT=False):
+def calculate_accuracy(yhat, y):
+    return 100. * torch.sum(yhat == y) / len(y)
+
+
+def test_step(model, test_loader, device, epoch, best_test_acc, modelName, saveCKPT=False):
     model.eval()
     with torch.no_grad():
+        test_acc = 0.
         for i, batch in enumerate(test_loader):
             img = batch['image'].to(device)
             # mask = batch['mask'] # Not Needed in classification setting
@@ -107,16 +112,24 @@ def test_step(model, test_loader, device, epoch, saveCKPT=False):
             print(f"{i+1} | {img.shape} | {y}")
 
             y_hat = model(img)
-            metric = 0 # TODO: Calculate metric here
+            test_acc += calculate_accuracy(y_hat, y) # TODO: Calculate acc metric here
 
-            # TODO: Log test metrics here
+        # TODO: Log test metrics here
+        test_acc = 1. * test_acc / len(test_loader)
+        print(f"Test acc: {test_acc}")
 
-            if saveCKPT: # TODO: Add code: `and currMetricVal < bestMetricVal:``
-                torch.save(model.state_dict(), os.path.join("checkpoints/", f'metric_{metric:.3f}' + str(epoch + 1) + '.pt'))
-               
+        if saveCKPT and test_acc < best_test_acc:
+            # check if checkpoints dir exists; if not make it
+            if not os.exists("./checkpoints"):
+                os.makedirs("./checkpoints")
+
+            torch.save(model.state_dict(), os.path.join("checkpoints/", f'{modelName}_acc_{test_acc:.3f}' + str(epoch + 1) + '.pt'))
+            best_test_acc = test_acc
+        
+        return best_test_acc
 
 
-def train_classifier(model, train_loader, test_loader, device, epochs=10, use_amp=True):
+def train_classifier(model, train_loader, test_loader, device, modelName, epochs=10, use_amp=True):
     for param in model.parameters():
         param.requires_grad = False
 
@@ -131,9 +144,12 @@ def train_classifier(model, train_loader, test_loader, device, epochs=10, use_am
 
     scaler = torch.cuda.amp.GradScaler(enabled=use_amp) # amp == automati mixed precison
 
+    train_epoch_acc = 0.
+    best_test_acc = 0.
     for epoch in range(epochs):
         print(f"Epoch: {epoch+1}")
         model.train()
+        train_step_acc = 0.
         for i, batch in enumerate(train_loader):
             img = batch['image'].to(device)
             # mask = batch['mask'] # Not Needed in classification setting
@@ -149,12 +165,14 @@ def train_classifier(model, train_loader, test_loader, device, epochs=10, use_am
             scaler.update()
             opt.zero_grad()
 
-            # TODO: Log train metrics here
-
-            # Test to save best model ckpt
-            test_step(model, test_loader, device, epoch, saveCKPT=True)
+            # DONE_TODO: Log train metrics here
+            train_step_acc += 100. * torch.sum(y_hat == y) / len(y) # DONE_TODO: Calculate train accuracy here 
 
         scheduler.step()
+        train_epoch_acc = train_step_acc / len(train_loader)
+        print(f"Epoch: {epoch} | Accuracy: {train_epoch_acc}")
+        # Test to save best model ckpt
+        best_test_acc = test_step(model, test_loader, device, epoch, best_test_acc, modelName, saveCKPT=True)
 
 
 if __name__ == '__main__':
@@ -174,4 +192,4 @@ if __name__ == '__main__':
 
     train_dataloader, test_dataloader = get_dataloaders(batch_size=16, num_workers=8)
 
-    train_classifier(model, train_dataloader, test_dataloader, args.device)
+    train_classifier(model, train_dataloader, test_dataloader, args.device, args.model)
