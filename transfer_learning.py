@@ -33,8 +33,12 @@ import timm.optim
 from custom_dataloader import get_dataloaders
 
 # DONE_TODO 1: Import pytorch lightning, wandb(logging), timm and use it to load a pretrained model 
-# TODO 2: Modify the model's classifier to output 3 classes instead of X (defined by the model)
-# TODO 3: Train the model + Logging & Saving best ckpt for 10 epochs and report test accuracy 
+# Done_TODO 2: Modify the model's classifier to output 3 classes instead of X (defined by the model)
+# Done_TODO 3: Train the model + Logging & Saving best ckpt for 10 epochs and report test accuracy 
+
+
+seed_everything(42)
+
 
 def get_args():
     args = argparse.ArgumentParser(description='Transfer Learning')
@@ -44,6 +48,7 @@ def get_args():
     args.add_argument('--device', '-d', type=str, default='cuda', required=True, help='Device to use [cpu, cuda:0, cuda:1, cuda]')
     args.add_argument('--mode', '-md', type=str, default='train', help='Mode to run: [train, trainX, test]. train = finetune only classifier layer. trainX = finetune last few layers including the classifier. test = test the model')
     args.add_argument('--ckpt_path', '-cp', type=str, default="", help='Path to checkpoint to load')
+    args.add_argument('--lr', '-lr', type=float, default=1e-3, help='Learning rate')
     # args.print_help()
     return args.parse_args()
 
@@ -83,15 +88,16 @@ def check_args(args):
 
 
 class LIT_TL(pl.LightningModule):
-    def __init__(self, model, modelName = "brrr"):
+    def __init__(self, model, modelName = "brrr", config: dict = None):
         super().__init__()
         self.save_hyperparameters(ignore=['model'])
         self.modelName = modelName
+        self.config = config
 
         num_filters = model.fc.in_features
         layers = list(model.children())[:-1]
         self.feature_extractor = nn.Sequential(*layers)
-        num_target_classes = 3
+        num_target_classes = config['classes']
         self.classifier = nn.Linear(num_filters, num_target_classes)
 
         self.ce_loss = nn.CrossEntropyLoss()
@@ -111,8 +117,11 @@ class LIT_TL(pl.LightningModule):
 
     def configure_optimizers(self):
         opt = timm.optim.AdamW((param for param in self.classifier.parameters() if param.requires_grad), 
-                               lr=1e-4, weight_decay=1e-3)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=10, eta_min=3e-5)
+                               lr=self.config['lr'], 
+                               weight_decay=self.config['decay'])
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(opt, 
+                                                                         T_0=self.config['T_0'], 
+                                                                         eta_min=self.config['eta_min'])
         return [opt], [scheduler]
 
     
@@ -163,11 +172,29 @@ class LIT_TL(pl.LightningModule):
         self.log("test_acc", test_acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
 
+def get_config(args):
+    config = {
+        'model': args.model,
+        'lr': args.lr,
+        'batch_size': args.batch_size,
+        'epochs': args.epochs,
+        'device': args.device,
+        'num_workers': args.num_workers,
+        'seed': args.seed,
+        'T_0': 100,
+        'eta_min': 1e-4,
+        'classes': 3,
+        'decay': 1e-3,
+    }
+    return config
+
+
 if __name__ == '__main__':
     args = get_args()
     # print("Total devices:", torch.cuda.device_count())
 
     check_args(args) # will also set args.device properly
+    config = get_config(args)
     if torch.cuda.is_available():
         device_name = torch.cuda.get_device_name(args.device)
     else:
@@ -176,7 +203,7 @@ if __name__ == '__main__':
     print(f"[+] Model Selected: {args.model}")
     
     model = get_model(args.model)
-    lit_model = LIT_TL(model, args.model)
+    lit_model = LIT_TL(model, args.model, config)
     
     train_dataloader, test_dataloader = get_dataloaders(batch_size=args.batch_size, num_workers=8)
 
@@ -193,8 +220,8 @@ if __name__ == '__main__':
     wandb.login()
     
     wandb_logger = WandbLogger(project='forgery_detection',
-                           name=f'TL_{args.model}_no_norm',
-                           config=vars(args),
+                           name=f'TL_{args.model}_norm_warmRestarts_higherLR',
+                           config=config,
                            job_type='finetuning',
                            log_model="all")
     # call trainer
