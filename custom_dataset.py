@@ -62,12 +62,22 @@ class Spoof_Dataset(Dataset):
 
         elif image_name[0] == 'c':
             img = cv.imread(os.path.join(self.copy_moved_imgs_dir, image_name))
-            mask = cv.imread(os.path.join(self.copy_moved_masks_dir, image_name))
+            try:
+                mask = cv.imread(os.path.join(self.copy_moved_masks_dir, image_name))
+            except Exception as e:
+                print(f"[!] {image_name} does not have a mask")
+                mask = np.zeros_like(img)
+
             class_label = 1
             
         elif image_name[0] == 's':
             img = cv.imread(os.path.join(self.spliced_imgs_dir, image_name))
-            mask = cv.imread(os.path.join(self.spliced_masks_dir, image_name))
+            try:
+                mask = cv.imread(os.path.join(self.spliced_masks_dir, image_name))
+            except Exception as e:
+                print(f"[!] {image_name} does not have a mask")
+                mask = np.zeros_like(img)
+
             class_label = 2
 
         # Apply custom transforms (bare minimum: Resize to 224x224 + ToTensor)

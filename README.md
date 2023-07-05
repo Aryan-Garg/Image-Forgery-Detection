@@ -65,6 +65,8 @@ Your directory structure should look like this:
                 └── masks
 ```
 
+**Note:** Masks are not present for all images!
+
 ---    
 
 ### EDA:
