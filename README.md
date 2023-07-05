@@ -1,4 +1,4 @@
-# Image Forgery Detection (PyTorch Lightning + WandB)
+# Image Forgery Detection (Lightning + WandB)
 
 ![Authentic Image](photo-grid.png "Dataset 3 classes")
 
