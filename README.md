@@ -1,4 +1,4 @@
-# Image Forgery Detection     
+# Image Forgery Detection (PyTorch Lightning + WandB)
 
 ![Authentic Image](photo-grid.png "Dataset 3 classes")
 
@@ -17,7 +17,7 @@ Vision Systems can be fooled with various input side attacks like using algorith
 
 Overall, classify images into 3 categories: authentic (0), copy-moved (1) or sliced (2). 
 
-> Traditional machine learning and then deep learning based approaches are used in this repo.
+> Traditional machine learning and then deep learning based approaches are used in this repo. Also `mixed precision training` is being used across all DL models. 
 
 
 ---
