@@ -37,9 +37,6 @@ from custom_dataloader import get_dataloaders
 # Done_TODO 3: Train the model + Logging & Saving best ckpt for 10 epochs and report test accuracy 
 
 
-seed_everything(42)
-
-
 def get_args():
     args = argparse.ArgumentParser(description='Transfer Learning')
     args.add_argument('--model', '-m', type=str, default='vgg16', required=True, help='Model to use [vgg16, vgg19, resnet50, resnet101, effb4, effb5]')
@@ -49,6 +46,7 @@ def get_args():
     args.add_argument('--mode', '-md', type=str, default='train', help='Mode to run: [train, trainX, test]. train = finetune only classifier layer. trainX = finetune last few layers including the classifier. test = test the model')
     args.add_argument('--ckpt_path', '-cp', type=str, default="", help='Path to checkpoint to load')
     args.add_argument('--lr', '-lr', type=float, default=1e-3, help='Learning rate')
+    args.add_argument('--num_workers', '-nw', type=int, default=8, help='Number of workers for dataloader')
     # args.print_help()
     return args.parse_args()
 
@@ -174,7 +172,9 @@ class LIT_TL(pl.LightningModule):
 
 def get_config(args):
     config = {
+        'seed': 42,
         'model': args.model,
+        'mode': args.mode,
         'lr': args.lr,
         'batch_size': args.batch_size,
         'epochs': args.epochs,
@@ -195,24 +195,27 @@ if __name__ == '__main__':
 
     check_args(args) # will also set args.device properly
     config = get_config(args)
+    seed_everything(42)
     if torch.cuda.is_available():
         device_name = torch.cuda.get_device_name(args.device)
     else:
         device_name = 'cpu'
     print("--------------------------------------------\nSelected device:", device_name,"\n--------------------------------------------")
-    print(f"[+] Model Selected: {args.model}")
+    print(f"[+] Model Selected: {config['model']}")
     
-    model = get_model(args.model)
-    lit_model = LIT_TL(model, args.model, config)
+    model = get_model(config['model'])
+    lit_model = LIT_TL(model, config['model'], config)
     
-    train_dataloader, test_dataloader = get_dataloaders(batch_size=args.batch_size, num_workers=8)
+    train_dataloader, test_dataloader = get_dataloaders(batch_size=config['batch_size'], 
+                                                        num_workers=config['num_workers'], 
+                                                        seed=config['seed'])
 
     # Callbacks
     checkpoint_callback = ModelCheckpoint(monitor="test_acc", 
                                           mode="max", 
                                           save_top_k=1, 
                                           dirpath="checkpoints/", 
-                                          filename=f"{args.model}" + "_{test_acc:.3f}")
+                                          filename=f"{config['model']}" + "_{test_acc:.3f}")
     
     lr_monitor = LearningRateMonitor(logging_interval='step', log_momentum=True)
     # early_stop_callback = EarlyStopping(monitor="loss", patience=99)
@@ -220,16 +223,16 @@ if __name__ == '__main__':
     wandb.login()
     
     wandb_logger = WandbLogger(project='forgery_detection',
-                           name=f'TL_{args.model}_norm_warmRestarts_higherLR',
+                           name=f"TL_{config['model']}_norm_warmRestarts_higherLR",
                            config=config,
                            job_type='finetuning',
                            log_model="all")
     # call trainer
     trainer = Trainer(fast_dev_run=False,
                       inference_mode=False,  # to enable grad enabling during inference
-                      max_epochs=args.epochs,
-                      accelerator="gpu" if "cuda" in args.device else "cpu",
-                      devices=[int(args.device.split(":")[-1])], # GPU ID that you selected
+                      max_epochs=config['epochs'],
+                      accelerator="gpu" if "cuda" in config['device'] else "cpu",
+                      devices=[int(config['device'].split(":")[-1])], # GPU ID that you selected
                       precision="16", # automatic mixed precision training
                       deterministic=True,
                       enable_checkpointing=True,
@@ -240,7 +243,7 @@ if __name__ == '__main__':
                       enable_progress_bar=True)
 
     # fit model
-    if args.mode == 'train' or args.mode == 'trainX': # TODO: Implement trainX mode
+    if config['mode'] == 'train' or config['mode'] == 'trainX': # TODO: Implement trainX mode
         trainer.fit(lit_model, train_dataloader, test_dataloader)
     else:
         # DONE_TODO: Load last checkpoint and test
