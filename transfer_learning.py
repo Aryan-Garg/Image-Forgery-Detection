@@ -9,6 +9,7 @@ import argparse
 import numpy as np
 import cv2 as cv
 from tqdm.auto import tqdm
+import matplotlib.pyplot as plt
 
 ### Pytorch
 import torch
@@ -47,6 +48,8 @@ def get_args():
     args.add_argument('--ckpt_path', '-cp', type=str, default="", help='Path to checkpoint to load')
     args.add_argument('--lr', '-lr', type=float, default=1e-3, help='Learning rate')
     args.add_argument('--num_workers', '-nw', type=int, default=8, help='Number of workers for dataloader')
+    args.add_argument('--exp_name', '-en', type=str, default='generic_exp', help='Experiment name for wandb')
+    args.add_argument('--use_cam', action='store_true', help='Use Class Activation Maps Loss')
     # args.print_help()
     return args.parse_args()
 
@@ -91,15 +94,45 @@ class LIT_TL(pl.LightningModule):
         self.save_hyperparameters(ignore=['model'])
         self.modelName = modelName
         self.config = config
+        
+        if "vgg" in modelName:
+            self.num_filters = model.head.fc.in_features
+        else:
+            self.num_filters = model.fc.in_features
 
-        num_filters = model.fc.in_features
         layers = list(model.children())[:-1]
         self.feature_extractor = nn.Sequential(*layers)
         num_target_classes = config['classes']
-        self.classifier = nn.Linear(num_filters, num_target_classes)
-
-        self.ce_loss = nn.CrossEntropyLoss()
         
+        if "vgg" in modelName: # custom classifier head for vggs ;)
+            self.classifier = nn.Sequential(*[
+                model.head.global_pool,
+                model.head.drop,
+                nn.Linear(in_features=4096, out_features=3, bias=True),
+                model.head.flatten,
+            ])
+        else:
+            self.classifier = nn.Linear(self.num_filters, num_target_classes)
+
+        self.classifier.apply(self.init_xavier)
+        self.ce_loss = nn.CrossEntropyLoss()
+
+        # TODO: Apply Class-Activation-Maps Loss and visualize it
+        self.use_cam = config['use_cam']
+        if self.use_cam:
+            self.gap_fc = nn.utils.spectral_norm(nn.Linear(self.num_filters, 1, bias=False))
+            self.gmp_fc = nn.utils.spectral_norm(nn.Linear(self.num_filters, 1, bias=False))
+            self.conv1x1 = nn.Conv2d(self.num_filters * 2, self.num_filters, kernel_size=1, stride=1, bias=True)
+            self.conv_classifier = nn.utils.spectral_norm(
+                nn.Conv2d(self.num_filters, 1, kernel_size=4, stride=1, padding=0, bias=False))
+            self.cam_loss = nn.CrossEntropyLoss()
+
+    
+    def init_xavier(self, m):
+        if type(m) == nn.Linear:
+            torch.nn.init.xavier_uniform_(m.weight)
+            m.bias.data.fill_(0.01)
+
 
     def calculate_accuracy(self, yhat, y):
         return 100. * torch.sum(yhat == y) / len(y)
@@ -108,9 +141,35 @@ class LIT_TL(pl.LightningModule):
     def forward(self, x):
         self.feature_extractor.eval()
         with torch.no_grad():
-            representations = self.feature_extractor(x).flatten(1)
-        x = self.classifier(representations)
-        return x
+            rep = self.feature_extractor(x)
+
+        if self.use_cam:
+            gap = torch.nn.functional.adaptive_avg_pool2d(rep, 1)
+            gap_logit = self.gap_fc(gap.view(rep.shape[0], -1))
+            gap_weight = list(self.gap_fc.parameters())[0]
+            gap = rep * gap_weight.unsqueeze(2).unsqueeze(3)
+
+            gmp = torch.nn.functional.adaptive_max_pool2d(rep, 1)
+            gmp_logit = self.gmp_fc(gmp.view(rep.shape[0], -1))
+            gmp_weight = list(self.gmp_fc.parameters())[0]
+            gmp = rep * gmp_weight.unsqueeze(2).unsqueeze(3)
+
+            c_logit = torch.cat([gap_logit, gmp_logit], 1)
+            rep = torch.cat([gap, gmp], 1)
+            rep = self.leaky_relu(self.conv1x1(rep))
+
+            heatmap = torch.sum(rep, dim=1, keepdim=True)
+
+            rep = self.pad(rep)
+            out = self.conv_classifier(rep)
+
+            return out, c_logit, heatmap
+        
+        else:
+            if not "vgg" in self.modelName:
+                rep = rep.flatten(1)
+            out = self.classifier(rep)
+            return out
 
 
     def configure_optimizers(self):
@@ -128,9 +187,18 @@ class LIT_TL(pl.LightningModule):
         # mask = batch['mask'] # Not Needed in classification setting
         y = batch['class_label'].to(self.device)
 
-        y_hat = self.forward(img)
-        loss = self.ce_loss(y_hat, y)
-        preds = torch.argmax(y_hat, dim=1)
+        if self.use_cam:
+            y_hat, logits, heatmap = self.forward(img)
+
+            if 1 + batch_idx % 100 == 0:
+                plt.savefig(f"{self.config['model']}_{batch_idx}.png", heatmap.squeeze(0).cpu().numpy())
+
+            cam_loss = self.cam_loss(logits, y)
+            loss = self.ce_loss(y_hat, y) + cam_loss
+        else:
+            y_hat = self.forward(img)
+            loss = self.ce_loss(y_hat, y)
+            preds = torch.argmax(y_hat, dim=1)
         # print(f"y: {y}, y_hat: {y_hat}")
 
         # DONE_TODO: Log train metrics here
@@ -141,8 +209,6 @@ class LIT_TL(pl.LightningModule):
 
     
     def validation_step(self, batch, batch_idx):
-        test_acc = 0.
-            
         img = batch['image'].to(self.device)
         # mask = batch['mask'] # Not Needed in classification setting
         y = batch['class_label'].to(self.device)
@@ -150,14 +216,29 @@ class LIT_TL(pl.LightningModule):
 
         y_hat = self.forward(img)
         preds = torch.argmax(y_hat, dim=1)
-        test_acc += self.calculate_accuracy(preds, y) # TODO: Calculate acc metric here
+        test_acc = self.calculate_accuracy(preds, y) 
 
         self.log("test_acc", test_acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        
+        # DONE_TODO: Add misclassified images to the logger for one batch
+        if (batch_idx + 1) % 10 == 0:
+            id2cat = {'0': 'authentic', '1': 'copy-moved', '2': 'spliced'}
+            caption_strs = []
+            for i in range(1):
+                correct = "Misclassified" if preds[i] != y[i] else "Correct"
+                caption_strs.append(f"Pred: {id2cat[str(preds[i].item())]}, Label: {id2cat[str(y[i].item())]} | {correct}")
+
+            self.logger.log_image(
+                key=f"Validation Batch: {batch_idx + 1}",
+                images=[img[i] for i in range(1)],
+                caption=caption_strs,
+            )
 
 
-    def test_step(self, batch, batch_idx):
-        test_acc = 0.
-            
+    def test_step(self, batch, batch_idx):  
+        # NOTE: Same as validation loop minus the image logging
+        # No image logging so that export can be done easily
+
         img = batch['image'].to(self.device)
         # mask = batch['mask'] # Not Needed in classification setting
         y = batch['class_label'].to(self.device)
@@ -165,7 +246,7 @@ class LIT_TL(pl.LightningModule):
 
         y_hat = self.forward(img)
         preds = torch.argmax(y_hat, dim=1)
-        test_acc += self.calculate_accuracy(preds, y) # TODO: Calculate acc metric here
+        test_acc = self.calculate_accuracy(preds, y)
 
         self.log("test_acc", test_acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
@@ -180,11 +261,12 @@ def get_config(args):
         'epochs': args.epochs,
         'device': args.device,
         'num_workers': args.num_workers,
-        'seed': args.seed,
-        'T_0': 100,
-        'eta_min': 1e-4,
+        'T_0': 50,
+        'eta_min': 6e-4,
         'classes': 3,
         'decay': 1e-3,
+        'exp_name': args.exp_name,
+        'use_cam': args.use_cam
     }
     return config
 
@@ -204,11 +286,11 @@ if __name__ == '__main__':
     print(f"[+] Model Selected: {config['model']}")
     
     model = get_model(config['model'])
+
     lit_model = LIT_TL(model, config['model'], config)
     
     train_dataloader, test_dataloader = get_dataloaders(batch_size=config['batch_size'], 
-                                                        num_workers=config['num_workers'], 
-                                                        seed=config['seed'])
+                                                        num_workers=config['num_workers'])
 
     # Callbacks
     checkpoint_callback = ModelCheckpoint(monitor="test_acc", 
@@ -222,8 +304,13 @@ if __name__ == '__main__':
 
     wandb.login()
     
+    if config['exp_name'] == 'generic_exp':
+        fnam = f"{config['model']}_GE"
+    else:
+        fnam = config['exp_name']
+
     wandb_logger = WandbLogger(project='forgery_detection',
-                           name=f"TL_{config['model']}_norm_warmRestarts_higherLR",
+                           name=f"TL_{fnam}",
                            config=config,
                            job_type='finetuning',
                            log_model="all")
