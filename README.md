@@ -128,6 +128,8 @@ Your directory structure should look like this:
 
 ## Methods:
 
+*All approahces are coded in independent scripts (with dependencies on the basic dataset, dataloader etc files)* 
+
 ### Approach 1: Transfer Learning (Classification Setting) (VGG (16 & 19), ResNet (50 & 101), EfficientNet (b4 & b7))
 
 Usage:
