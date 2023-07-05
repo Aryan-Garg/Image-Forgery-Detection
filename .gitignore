@@ -1,3 +1,5 @@
 datasets/**
 *.pdf
 __pycache__/
+wandb/
+checkpoints/

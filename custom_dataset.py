@@ -56,26 +56,26 @@ class Spoof_Dataset(Dataset):
     def __getitem__(self, idx: int):
         image_name = self.all_image_paths[idx]
         if image_name[0] == 'a':
-            img = cv.imread(os.path.join(self.authentic_dir, image_name))
+            img = cv.imread(os.path.join(self.authentic_dir, image_name), cv.IMREAD_COLOR)
             mask = np.zeros_like(img)
             class_label = 0
 
         elif image_name[0] == 'c':
-            img = cv.imread(os.path.join(self.copy_moved_imgs_dir, image_name))
-            try:
+            img = cv.imread(os.path.join(self.copy_moved_imgs_dir, image_name), cv.IMREAD_COLOR)
+            if image_name in self.all_masks_path:
                 mask = cv.imread(os.path.join(self.copy_moved_masks_dir, image_name))
-            except Exception as e:
-                print(f"[!] {image_name} does not have a mask")
+            else:
+                # print(f"[!] {image_name} does not have a mask")
                 mask = np.zeros_like(img)
 
             class_label = 1
             
         elif image_name[0] == 's':
-            img = cv.imread(os.path.join(self.spliced_imgs_dir, image_name))
-            try:
+            img = cv.imread(os.path.join(self.spliced_imgs_dir, image_name), cv.IMREAD_COLOR)
+            if image_name in self.all_masks_path:
                 mask = cv.imread(os.path.join(self.spliced_masks_dir, image_name))
-            except Exception as e:
-                print(f"[!] {image_name} does not have a mask")
+            else:
+                # print(f"[!] {image_name} does not have a mask")
                 mask = np.zeros_like(img)
 
             class_label = 2
