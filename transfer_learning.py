@@ -181,14 +181,19 @@ if __name__ == '__main__':
     train_dataloader, test_dataloader = get_dataloaders(batch_size=args.batch_size, num_workers=8)
 
     # Callbacks
-    checkpoint_callback = ModelCheckpoint(monitor="test_acc", mode="max", save_top_k=1, dirpath="checkpoints/", filename="{args.model}_{test_acc:.3f}")
+    checkpoint_callback = ModelCheckpoint(monitor="test_acc", 
+                                          mode="max", 
+                                          save_top_k=1, 
+                                          dirpath="checkpoints/", 
+                                          filename=f"{args.model}" + "_{test_acc:.3f}")
+    
     lr_monitor = LearningRateMonitor(logging_interval='step', log_momentum=True)
     # early_stop_callback = EarlyStopping(monitor="loss", patience=99)
 
     wandb.login()
     
     wandb_logger = WandbLogger(project='forgery_detection',
-                           name=f'TL_{args.model}',
+                           name=f'TL_{args.model}_no_norm',
                            config=vars(args),
                            job_type='finetuning',
                            log_model="all")
