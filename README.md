@@ -126,6 +126,13 @@ Your directory structure should look like this:
 
 ---
 
+### Hardware Used for the Project:  
+
+1. NVIDIA GeForce GTX 3090     
+2. NVIDIA GeForce GTX 1080 Ti  
+
+---
+
 ## Methods:
 
 *All approahces are coded in independent scripts (with dependencies on the basic dataset, dataloader etc files)* 
