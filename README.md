@@ -142,16 +142,20 @@ where x is the GPU ID on your machine and model should be among [vgg16, vgg19, r
 
 **Progression of experiments:**
 1. Fine-tuning the classifier with Cross-Entropy loss
-2. Adding Class Activation Map (CAM) Loss & visualizations.
-
-
----
-
-### Approach 2: Custom Shallow CNN for classification
+2. Adding Class Activation Map (CAM) Loss & visualizations. (Not tested!)
+3. Test 6 different architectures 
 
 ---
 
-### Approach 3: Transfer Learning (Segmentation Setting) (U-Net with encoders: ResNet (26B, )) ---> Fine-tuning
+### Approach 2: Custom Shallow CNN for classification  
+
+---
+
+### Approach 3: Error Level Analysis
+
+---
+
+### Approach 4: SRM Filters
 
 ---
 
@@ -166,6 +170,10 @@ where x is the GPU ID on your machine and model should be among [vgg16, vgg19, r
 2. [Forgery Detection Papers Replicated Repo - Umar](https://github.com/umar07/Image_Forgery_Detection/tree/main)
 
 3. [Medium - Image Forgery Detection](https://medium.com/@vvsnikhil/image-forgery-detection-d27d7a3a61d)
+
+4. [Neal Krawetz' dissertation: A picture's worth: Digital Image Analysis & Forensics](https://www.hackerfactor.com/papers/bh-usa-07-krawetz-wp.pdf)
+
+5. [CVPR '18 Paper: Learning Rich Features for Image Manipulation Detection (SRM filters)](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjE3NDo7vn_AhVhZmwGHW9cD9MQFnoECCcQAQ&url=https%3A%2F%2Fopenaccess.thecvf.com%2Fcontent_cvpr_2018%2FCameraReady%2F2813.pdf&usg=AOvVaw0tK8ooNdU_mYtjoF07RnJ7&opi=89978449)
 
 ---    
 

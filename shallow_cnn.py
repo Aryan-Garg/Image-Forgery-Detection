@@ -170,9 +170,9 @@ class LIT_CNN(pl.LightningModule):
 
     def on_validation_epoch_end(self) -> None:
         class_names = ['authentic', 'copy-moved', 'spliced']
-        self.log({"conf_mat" : wandb.plot.confusion_matrix(probs=None,
-                        y_true=self.val_gt, preds=self.val_preds,
-                        class_names=class_names)})
+        
+        cm = wandb.plot.confusion_matrix(y_true=self.val_gt, preds=self.val_preds, class_names=class_names)
+        self.logger.experiment.log({"conf_mat": cm})
 
         self.log("precision", precision_score(self.val_gt, self.val_preds, average='weighted'))
         self.log("f1-score", f1_score(self.val_gt, self.val_preds, average='weighted'))     
@@ -214,7 +214,8 @@ class LIT_CNN(pl.LightningModule):
 
     def on_test_epoch_end(self) -> None:
         class_names = ['authentic', 'copy-moved', 'spliced']
-        print("conf_mat",  confusion_matrix(self.test_gt, self.test_preds))
+        cm = confusion_matrix(self.test_gt, self.test_preds)
+        print("conf_mat", cm)
 
         print("precision", precision_score(self.test_gt, self.test_preds, average='weighted'))
         print("f1-score", f1_score(self.test_gt, self.test_preds, average='weighted'))     
