@@ -28,7 +28,7 @@ from torchsummary import summary
 
 ### Custom
 from custom_dataloader import get_dataloaders
-from models.shallow_CNN import ShallowCNN
+from models.shallow_CNN_arch import ShallowCNN
 
 # DONE_TODO 1: Import pytorch lightning, wandb(logging), timm and use it to load a pretrained model 
 # Done_TODO 2: Modify the model's classifier to output 3 classes instead of X (defined by the model)
@@ -37,7 +37,7 @@ from models.shallow_CNN import ShallowCNN
 
 def get_args():
     args = argparse.ArgumentParser(description='Transfer Learning')
-    args.add_argument('--model', '-m', type=str, default='custom_cnn', required=True, help='Redundant flag (only kept in to ensure compatibility with other scripts)')
+    args.add_argument('--model', '-m', type=str, default='custom_cnn', required=False, help='Redundant flag (only kept in to ensure compatibility with other scripts)')
     args.add_argument('--epochs', '-e', type=int, default=10, help='Number of epochs to train for')
     args.add_argument('--batch_size', type=int, default=32, help='Batch size')
     args.add_argument('--device', '-d', type=str, default='cuda', required=True, help='Device to use [cpu, cuda:0, cuda:1, cuda]')
@@ -65,8 +65,10 @@ class LIT_CNN(pl.LightningModule):
         self.save_hyperparameters(ignore=['model'])
         self.modelName = modelName
         self.config = config
-        
+
+        self.model = model
         self.feature_extractor = nn.Sequential(*list(model.children())[:-1])
+
         self.ce_loss = nn.CrossEntropyLoss()
 
         # CAM Module
@@ -91,9 +93,8 @@ class LIT_CNN(pl.LightningModule):
 
 
     def forward(self, x):
-        rep = self.feature_extractor(x)
-
         if self.use_cam:
+            rep = self.feature_extractor(x)
             gap = torch.nn.functional.adaptive_avg_pool2d(rep, 1)
             gap_logit = self.gap_fc(gap.view(rep.shape[0], -1))
             gap_weight = list(self.gap_fc.parameters())[0]
