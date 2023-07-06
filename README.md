@@ -145,9 +145,19 @@ where x is the GPU ID on your machine and model should be among [vgg16, vgg19, r
 2. Adding Class Activation Map (CAM) Loss & visualizations. (Not tested!)
 3. Test 6 different architectures 
 
+**Best Test Accuracy (so far): 62.45%**
+
 ---
 
 ### Approach 2: Custom Shallow CNN for classification  
+
+To train/test:
+
+```
+./shallow_cnn.py --device <your-device> --mode <train/test> --lr <your-LR> --exp_name <your-exp-name>
+```
+
+**Best Test Accuracy (so far): 47.59%**
 
 ---
 
