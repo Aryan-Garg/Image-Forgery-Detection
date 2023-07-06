@@ -17,6 +17,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+
+### sklearn
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, classification_report, confusion_matrix
+
 ### WandB, Pytorch Lightning & torchsummary 
 import wandb
 import lightning.pytorch as pl
@@ -80,6 +84,12 @@ class LIT_CNN(pl.LightningModule):
             self.conv_classifier = nn.utils.spectral_norm(
                 nn.Conv2d(self.num_filters, 1, kernel_size=4, stride=1, padding=0, bias=False))
             self.cam_loss = nn.CrossEntropyLoss()
+
+        self.val_preds = []
+        self.val_gt = []
+
+        self.test_preds = []
+        self.test_gt = []
 
     
     def init_xavier(self, m):
@@ -157,6 +167,21 @@ class LIT_CNN(pl.LightningModule):
         
         return loss
 
+
+    def on_validation_epoch_end(self) -> None:
+        class_names = ['authentic', 'copy-moved', 'spliced']
+        self.log({"conf_mat" : wandb.plot.confusion_matrix(probs=None,
+                        y_true=self.val_gt, preds=self.val_preds,
+                        class_names=class_names)})
+
+        self.log("precision", precision_score(self.val_gt, self.val_preds, average='weighted'))
+        self.log("f1-score", f1_score(self.val_gt, self.val_preds, average='weighted'))     
+        self.log("recall", recall_score(self.val_gt, self.val_preds, average='weighted'))
+        self.log("accuracy", accuracy_score(self.val_gt, self.val_preds))
+
+        self.val_gt = []
+        self.val_preds = []
+
     
     def validation_step(self, batch, batch_idx):
         img = batch['image'].to(self.device)
@@ -183,6 +208,21 @@ class LIT_CNN(pl.LightningModule):
                 images=[img[i] for i in range(1)],
                 caption=caption_strs,
             )
+        self.val_preds.extend(preds.cpu().numpy())
+        self.val_gt.extend(y.cpu().numpy())
+
+
+    def on_test_epoch_end(self) -> None:
+        class_names = ['authentic', 'copy-moved', 'spliced']
+        print("conf_mat",  confusion_matrix(self.test_gt, self.test_preds))
+
+        print("precision", precision_score(self.test_gt, self.test_preds, average='weighted'))
+        print("f1-score", f1_score(self.test_gt, self.test_preds, average='weighted'))     
+        print("recall", recall_score(self.test_gt, self.test_preds, average='weighted'))
+        print("accuracy", accuracy_score(self.test_gt, self.test_preds))
+
+        self.test_gt = []
+        self.test_preds = []
 
 
     def test_step(self, batch, batch_idx):  
@@ -199,6 +239,9 @@ class LIT_CNN(pl.LightningModule):
         test_acc = self.calculate_accuracy(preds, y)
 
         self.log("test_acc", test_acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+
+        self.test_gt.extend(y.cpu().numpy())
+        self.test_preds.extend(preds.cpu().numpy())
 
 
 def get_config(args):
