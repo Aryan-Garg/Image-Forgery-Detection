@@ -97,6 +97,8 @@ class LIT_TL(pl.LightningModule):
         
         if "vgg" in modelName:
             self.num_filters = model.head.fc.in_features
+        elif "eff" in modelName:
+            self.num_filters = model.classifier.in_features
         else:
             self.num_filters = model.fc.in_features
 
@@ -220,17 +222,17 @@ class LIT_TL(pl.LightningModule):
 
         self.log("test_acc", test_acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         
-        # DONE_TODO: Add misclassified images to the logger for one batch
+        # DONE_TODO: Add images to the logger for one batch
         if (batch_idx + 1) % 10 == 0:
             id2cat = {'0': 'authentic', '1': 'copy-moved', '2': 'spliced'}
             caption_strs = []
-            for i in range(1):
+            for i in range(len(img)):
                 correct = "Misclassified" if preds[i] != y[i] else "Correct"
                 caption_strs.append(f"Pred: {id2cat[str(preds[i].item())]}, Label: {id2cat[str(y[i].item())]} | {correct}")
 
             self.logger.log_image(
                 key=f"Validation Batch: {batch_idx + 1}",
-                images=[img[i] for i in range(1)],
+                images=[img[i] for i in range(len(img))],
                 caption=caption_strs,
             )
 
@@ -286,7 +288,7 @@ if __name__ == '__main__':
     print(f"[+] Model Selected: {config['model']}")
     
     model = get_model(config['model'])
-
+  
     lit_model = LIT_TL(model, config['model'], config)
     
     train_dataloader, test_dataloader = get_dataloaders(batch_size=config['batch_size'], 
